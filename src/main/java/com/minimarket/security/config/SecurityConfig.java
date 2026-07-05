@@ -51,28 +51,28 @@ public class SecurityConfig {
 
                         .requestMatchers("/api/productos/**")
                         .hasAnyAuthority(
-                                "EMPLEADO",
+                                "CAJERO",
                                 "ADMINISTRADOR")
 
                         .requestMatchers("/api/inventario/**")
                         .hasAnyAuthority(
-                                "EMPLEADO",
+                                "CAJERO",
                                 "ADMINISTRADOR")
 
                         .requestMatchers("/api/ventas/**")
                         .hasAnyAuthority(
-                                "EMPLEADO",
+                                "CAJERO",
                                 "ADMINISTRADOR")
 
                         .requestMatchers("/api/detalle-ventas/**")
                         .hasAnyAuthority(
-                                "EMPLEADO",
+                                "CAJERO",
                                 "ADMINISTRADOR")
 
                         .requestMatchers("/api/carrito/**")
                         .hasAnyAuthority(
                                 "CLIENTE",
-                                "EMPLEADO",
+                                "CAJERO",
                                 "ADMINISTRADOR")
 
                         .anyRequest()

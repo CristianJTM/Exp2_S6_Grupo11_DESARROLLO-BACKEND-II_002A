@@ -49,7 +49,7 @@ public class VentaValidator {
         return usuario.getRoles()
                 .stream()
                 .anyMatch(rol ->
-                        rol.getNombre().equals("EMPLEADO")
+                        rol.getNombre().equals("CAJERO")
                                 || rol.getNombre().equals("ADMINISTRADOR"));
     }
 }

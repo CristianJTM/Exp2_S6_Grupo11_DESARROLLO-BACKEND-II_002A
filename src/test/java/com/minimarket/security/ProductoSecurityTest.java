@@ -35,8 +35,8 @@ public class ProductoSecurityTest {
     }
 
     @Test
-    @WithMockUser(authorities = "EMPLEADO")
-    void empleado_DebeAccederAProductos()
+    @WithMockUser(authorities = "CAJERO")
+    void cajero_DebeAccederAProductos()
             throws Exception {
 
         mockMvc.perform(get("/api/productos"))
