@@ -2,6 +2,10 @@ package com.minimarket.controller;
 
 import com.minimarket.entity.Carrito;
 import com.minimarket.service.CarritoService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -9,6 +13,10 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Tag(
+        name = "Carrito",
+        description = "Operaciones relacionadas con el carrito de compras"
+)
 @RestController
 @RequestMapping("/api/carrito")
 @PreAuthorize("hasAnyRole('CLIENTE','CAJERO','ADMINISTRADOR')")
@@ -17,6 +25,15 @@ public class CarritoController {
     @Autowired
     private CarritoService carritoService;
 
+    @Operation(
+            summary = "Obtener todos los productos del carrito",
+            description = "Devuelve la lista completa de productos en el carrito"
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Lista obtenida correctamente"),
+            @ApiResponse(responseCode = "401", description = "No autorizado"),
+            @ApiResponse(responseCode = "403", description = "Acceso denegado")
+    })
     @GetMapping
     public List<Carrito> listarCarrito() {
         return carritoService.findAll();
@@ -28,11 +45,30 @@ public class CarritoController {
         return (carrito != null) ? ResponseEntity.ok(carrito) : ResponseEntity.notFound().build();
     }
 
+    @Operation(
+            summary = "Agregar producto al carrito",
+            description = "Agrega un producto al carrito de compras"
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Producto agregado correctamente"),
+            @ApiResponse(responseCode = "401", description = "No autorizado"),
+            @ApiResponse(responseCode = "403", description = "Acceso denegado")
+    })
     @PostMapping
     public Carrito agregarProductoAlCarrito(@RequestBody Carrito carrito) {
         return carritoService.save(carrito);
     }
 
+    @Operation(
+            summary = "Actualizar el carrito",
+            description = "Modifica los datos del carrito"
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Carrito actualizado correctamente"),
+            @ApiResponse(responseCode = "401", description = "No autorizado"),
+            @ApiResponse(responseCode = "403", description = "Acceso denegado"),
+            @ApiResponse(responseCode = "404", description = "Carrito no encontrado")
+    })
     @PutMapping("/{id}")
     public ResponseEntity<Carrito> actualizarCarrito(@PathVariable Long id, @RequestBody Carrito carrito) {
         Carrito existente = carritoService.findById(id);
@@ -43,6 +79,16 @@ public class CarritoController {
         return ResponseEntity.notFound().build();
     }
 
+    @Operation(
+            summary = "Eliminar un producto del carrito",
+            description = "Elimina un producto ya registrado en el carrito"
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Producto eliminado correctamente"),
+            @ApiResponse(responseCode = "401", description = "No autorizado"),
+            @ApiResponse(responseCode = "403", description = "Acceso denegado"),
+            @ApiResponse(responseCode = "404", description = "Producto no encontrado")
+    })
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminarProductoDelCarrito(@PathVariable Long id) {
         Carrito carrito = carritoService.findById(id);
