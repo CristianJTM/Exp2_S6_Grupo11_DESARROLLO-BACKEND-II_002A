@@ -40,6 +40,15 @@ public class ProductoController {
         return productoService.findAll();
     }
 
+    @Operation(
+            summary = "Obtener un producto por ID",
+            description = "Devuelve los detalles de un producto específico"
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Producto obtenido correctamente"),
+            @ApiResponse(responseCode = "401", description = "No autorizado"),
+            @ApiResponse(responseCode = "403", description = "Acceso denegado")
+    })
     @GetMapping("/{id}")
     public ResponseEntity<Producto> obtenerProductoPorId(@PathVariable Long id) {
         Producto producto = productoService.findById(id);
