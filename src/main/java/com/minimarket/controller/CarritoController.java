@@ -39,6 +39,15 @@ public class CarritoController {
         return carritoService.findAll();
     }
 
+    @Operation(
+            summary = "Obtener un carrito por ID",
+            description = "Devuelve los detalles de un carrito específico"
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Carrito obtenido correctamente"),
+            @ApiResponse(responseCode = "401", description = "No autorizado"),
+            @ApiResponse(responseCode = "403", description = "Acceso denegado")
+    })
     @GetMapping("/{id}")
     public ResponseEntity<Carrito> obtenerCarritoPorId(@PathVariable Long id) {
         Carrito carrito = carritoService.findById(id);
