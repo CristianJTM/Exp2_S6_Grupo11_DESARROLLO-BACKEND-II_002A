@@ -2,6 +2,7 @@ package com.minimarket.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
 import java.util.Set;
 
@@ -11,10 +12,18 @@ public class Usuario {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Schema(
+            description = "Nombre de usuario",
+            example = "johndoe"
+    )
     @Column(nullable = false, unique = true)
     private String username;
 
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    @Schema(
+            description = "Contraseña del usuario",
+            example = "password123"
+    )
     @Column(nullable = false)
     @JsonIgnore
     private String password;

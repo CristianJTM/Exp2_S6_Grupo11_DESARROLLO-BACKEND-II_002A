@@ -1,5 +1,6 @@
 package com.minimarket.entity;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
 
 @Entity
@@ -16,6 +17,10 @@ public class Carrito {
     @JoinColumn(name = "producto_id", nullable = false)
     private Producto producto;
 
+    @Schema(
+            description = "Cantidad de productos en el carrito",
+            example = "2"
+    )
     @Column(nullable = false)
     private Integer cantidad;
 

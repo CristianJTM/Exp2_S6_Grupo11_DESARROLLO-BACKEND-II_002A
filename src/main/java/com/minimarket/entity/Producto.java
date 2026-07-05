@@ -1,5 +1,6 @@
 package com.minimarket.entity;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
 
 @Entity
@@ -8,12 +9,24 @@ public class Producto {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Schema(
+            description = "Nombre del producto",
+            example = "Leche Entera"
+    )
     @Column(nullable = false)
     private String nombre;
 
+    @Schema(
+            description = "Precio del producto",
+            example = "1500"
+    )
     @Column(nullable = false)
     private Double precio;
 
+    @Schema(
+            description = "Stock del producto",
+            example = "100"
+    )
     @Column(nullable = false)
     private Integer stock;
 
