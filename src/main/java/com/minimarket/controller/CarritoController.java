@@ -11,7 +11,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/carrito")
-@PreAuthorize("hasAnyRole('CLIENTE','EMPLEADO','GERENTE')")
+@PreAuthorize("hasAnyRole('CLIENTE','EMPLEADO','ADMINISTRADOR')")
 public class CarritoController {
 
     @Autowired

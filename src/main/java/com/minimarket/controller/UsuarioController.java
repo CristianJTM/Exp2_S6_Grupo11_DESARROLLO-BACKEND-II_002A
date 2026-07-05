@@ -12,7 +12,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/usuarios")
-@PreAuthorize("hasAnyRole('EMPLEADO','GERENTE')")
+@PreAuthorize("hasAnyRole('EMPLEADO','ADMINISTRADOR')")
 public class UsuarioController {
 
     @Autowired

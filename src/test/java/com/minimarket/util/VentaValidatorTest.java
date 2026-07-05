@@ -134,11 +134,11 @@ public class VentaValidatorTest {
     }
 
     @Test
-    void gerentePuedeRegistrarVenta() {
+    void administradorPuedeRegistrarVenta() {
 
         Rol rol = new Rol();
 
-        rol.setNombre("GERENTE");
+        rol.setNombre("ADMINISTRADOR");
 
         Usuario usuario = new Usuario();
 

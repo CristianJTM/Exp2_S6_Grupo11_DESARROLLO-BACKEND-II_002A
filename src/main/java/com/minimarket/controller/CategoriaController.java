@@ -11,7 +11,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/categorias")
-@PreAuthorize("hasAnyRole('GERENTE')")
+@PreAuthorize("hasAnyRole('ADMINISTRADOR')")
 public class CategoriaController {
 
     @Autowired

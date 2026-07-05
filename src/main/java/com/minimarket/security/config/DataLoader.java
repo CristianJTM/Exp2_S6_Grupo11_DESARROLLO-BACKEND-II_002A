@@ -42,8 +42,8 @@ public class DataLoader implements CommandLineRunner {
 
         if (rolRepository.count() == 0) {
 
-            Rol gerente = new Rol();
-            gerente.setNombre("GERENTE");
+            Rol administrador = new Rol();
+            administrador.setNombre("ADMINISTRADOR");
 
             Rol empleado = new Rol();
             empleado.setNombre("EMPLEADO");
@@ -51,7 +51,7 @@ public class DataLoader implements CommandLineRunner {
             Rol cliente = new Rol();
             cliente.setNombre("CLIENTE");
 
-            rolRepository.save(gerente);
+            rolRepository.save(administrador);
             rolRepository.save(empleado);
             rolRepository.save(cliente);
 
@@ -59,7 +59,7 @@ public class DataLoader implements CommandLineRunner {
             admin.setUsername("admin");
             admin.setPassword(
                     passwordEncoder.encode("admin123"));
-            admin.setRoles(Set.of(gerente));
+            admin.setRoles(Set.of(administrador));
 
             Usuario vendedor = new Usuario();
             vendedor.setUsername("empleado");

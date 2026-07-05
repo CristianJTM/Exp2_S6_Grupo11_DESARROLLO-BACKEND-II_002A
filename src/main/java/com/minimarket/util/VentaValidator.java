@@ -50,6 +50,6 @@ public class VentaValidator {
                 .stream()
                 .anyMatch(rol ->
                         rol.getNombre().equals("EMPLEADO")
-                                || rol.getNombre().equals("GERENTE"));
+                                || rol.getNombre().equals("ADMINISTRADOR"));
     }
 }

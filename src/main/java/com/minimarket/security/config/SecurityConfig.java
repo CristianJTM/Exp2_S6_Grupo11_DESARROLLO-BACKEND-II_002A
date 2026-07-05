@@ -44,36 +44,36 @@ public class SecurityConfig {
                         .permitAll()
 
                         .requestMatchers("/api/usuarios/**")
-                        .hasAuthority("GERENTE")
+                        .hasAuthority("ADMINISTRADOR")
 
                         .requestMatchers("/api/categorias/**")
-                        .hasAuthority("GERENTE")
+                        .hasAuthority("ADMINISTRADOR")
 
                         .requestMatchers("/api/productos/**")
                         .hasAnyAuthority(
                                 "EMPLEADO",
-                                "GERENTE")
+                                "ADMINISTRADOR")
 
                         .requestMatchers("/api/inventario/**")
                         .hasAnyAuthority(
                                 "EMPLEADO",
-                                "GERENTE")
+                                "ADMINISTRADOR")
 
                         .requestMatchers("/api/ventas/**")
                         .hasAnyAuthority(
                                 "EMPLEADO",
-                                "GERENTE")
+                                "ADMINISTRADOR")
 
                         .requestMatchers("/api/detalle-ventas/**")
                         .hasAnyAuthority(
                                 "EMPLEADO",
-                                "GERENTE")
+                                "ADMINISTRADOR")
 
                         .requestMatchers("/api/carrito/**")
                         .hasAnyAuthority(
                                 "CLIENTE",
                                 "EMPLEADO",
-                                "GERENTE")
+                                "ADMINISTRADOR")
 
                         .anyRequest()
                         .authenticated()
