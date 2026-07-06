@@ -1,24 +1,45 @@
 package com.minimarket.entity;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
 
 @Entity
 public class DetalleVenta {
+    @Schema(
+            description = "Identificador unico",
+            example = "1"
+    )
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Schema(
+            description = "Venta a la que pertenece el detalle",
+            example = "1"
+    )
     @ManyToOne
     @JoinColumn(name = "venta_id", nullable = false)
     private Venta venta;
 
+    @Schema(
+            description = "Producto en el detalle",
+            example = "1"
+    )
     @ManyToOne
     @JoinColumn(name = "producto_id", nullable = false)
     private Producto producto;
 
+    @Schema(
+            description = "Cantidad de productos en el detalle",
+            example = "2"
+    )
     @Column(nullable = false)
     private Integer cantidad;
 
+    @Schema(
+            description = "Precio unitario del producto en el detalle",
+            example = "10.50"
+    )
     @Column(nullable = false)
     private Double precio;
 

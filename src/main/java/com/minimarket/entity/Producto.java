@@ -5,6 +5,10 @@ import jakarta.persistence.*;
 
 @Entity
 public class Producto {
+    @Schema(
+            description = "Identificador unico",
+            example = "1"
+    )
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -30,6 +34,9 @@ public class Producto {
     @Column(nullable = false)
     private Integer stock;
 
+    @Schema(
+            description = "Categoria del producto"
+    )
     @ManyToOne
     @JoinColumn(name = "categoria_id", nullable = false)
     private Categoria categoria;

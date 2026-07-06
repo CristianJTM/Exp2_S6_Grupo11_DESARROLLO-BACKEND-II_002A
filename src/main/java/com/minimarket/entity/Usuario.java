@@ -8,6 +8,10 @@ import java.util.Set;
 
 @Entity
 public class Usuario {
+    @Schema(
+            description = "Identificador Unico",
+            example = "1"
+    )
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -28,6 +32,9 @@ public class Usuario {
     @JsonIgnore
     private String password;
 
+    @Schema(
+            description = "Roles del usuario"
+    )
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "usuario_roles",

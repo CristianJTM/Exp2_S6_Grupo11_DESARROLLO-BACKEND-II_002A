@@ -1,23 +1,38 @@
 package com.minimarket.entity;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
 import java.util.Date;
 import java.util.List;
 
 @Entity
 public class Venta {
+    @Schema(
+            description = "Identificador Unico",
+            example = "1"
+    )
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne
     @JoinColumn(name = "usuario_id", nullable = false)
+    @Schema(
+            description = "Usuario que realizó la venta"
+    )
     private Usuario usuario;
 
     @Column(nullable = false)
+    @Schema(
+            description = "Fecha de la venta",
+            example = "2023-01-01"
+    )
     private Date fecha;
 
     @OneToMany(mappedBy = "venta", cascade = CascadeType.ALL)
+    @Schema(
+            description = "Detalles de la venta"
+    )
     private List<DetalleVenta> detalles;
 
     // Getters y Setters

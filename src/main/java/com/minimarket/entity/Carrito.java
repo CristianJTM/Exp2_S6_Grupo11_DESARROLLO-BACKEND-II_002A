@@ -5,14 +5,26 @@ import jakarta.persistence.*;
 
 @Entity
 public class Carrito {
+    @Schema(
+            description = "Identificador unico",
+            example = "1"
+    )
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Schema(
+            description = "Usuario dueño del carrito",
+            example = "1"
+    )
     @ManyToOne
     @JoinColumn(name = "usuario_id", nullable = false)
     private Usuario usuario;
 
+    @Schema(
+            description = "Producto en el carrito",
+            example = "1"
+    )
     @ManyToOne
     @JoinColumn(name = "producto_id", nullable = false)
     private Producto producto;

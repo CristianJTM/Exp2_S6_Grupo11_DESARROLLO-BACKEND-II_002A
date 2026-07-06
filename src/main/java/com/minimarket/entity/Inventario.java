@@ -1,24 +1,45 @@
 package com.minimarket.entity;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
 import java.util.Date;
 
 @Entity
 public class Inventario {
+    @Schema(
+            description = "Identificador unicos",
+            example = "1"
+    )
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Schema(
+            description = "Producto al que pertenece el inventario",
+            example = "1"
+    )
     @ManyToOne
     @JoinColumn(name = "producto_id", nullable = false)
     private Producto producto;
 
+    @Schema(
+            description = "Cantidad de productos en el inventario",
+            example = "10"
+    )
     @Column(nullable = false)
     private Integer cantidad;
 
+    @Schema(
+            description = "Tipo de movimiento en el inventario",
+            example = "Entrada"
+    )
     @Column(nullable = false)
     private String tipoMovimiento; // Ejemplo: "Entrada" o "Salida"
 
+    @Schema(
+            description = "Fecha del movimiento en el inventario",
+            example = "2023-01-01"
+    )
     @Column(nullable = false)
     private Date fechaMovimiento;
 
