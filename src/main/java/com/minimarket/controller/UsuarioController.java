@@ -7,6 +7,13 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
+
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
+
+import java.util.stream.Collectors;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -36,8 +43,21 @@ public class UsuarioController {
             @ApiResponse(responseCode = "403", description = "Acceso denegado")
     })
     @GetMapping
-    public List<Usuario> listarUsuarios() {
-        return usuarioService.findAll();
+    public CollectionModel<EntityModel<Usuario>> listarUsuarios() {
+
+        List<EntityModel<Usuario>> usuarios = usuarioService.findAll()
+                .stream()
+                .map(usuario -> EntityModel.of(usuario,
+                        linkTo(methodOn(UsuarioController.class)
+                                .obtenerUsuarioPorId(usuario.getId())).withSelfRel(),
+                        linkTo(methodOn(UsuarioController.class)
+                                .listarUsuarios()).withRel("usuarios")
+                ))
+                .collect(Collectors.toList());
+
+        return CollectionModel.of(usuarios,
+                linkTo(methodOn(UsuarioController.class)
+                        .listarUsuarios()).withSelfRel());
     }
 
     @Operation(
@@ -51,10 +71,27 @@ public class UsuarioController {
             @ApiResponse(responseCode = "404", description = "Usuario no encontrado")
     })
     @GetMapping("/{id}")
-    public ResponseEntity<Usuario> obtenerUsuarioPorId(@PathVariable Long id) {
+    public ResponseEntity<EntityModel<Usuario>> obtenerUsuarioPorId(@PathVariable Long id) {
+
         Optional<Usuario> usuario = usuarioService.findById(id);
-        return usuario.map(ResponseEntity::ok) // Si el usuario existe, devuelve 200 OK con el usuario
-                .orElseGet(() -> ResponseEntity.notFound().build()); // Si no, devuelve 404
+
+        if (usuario.isPresent()) {
+
+            EntityModel<Usuario> resource = EntityModel.of(usuario.get(),
+                    linkTo(methodOn(UsuarioController.class)
+                            .obtenerUsuarioPorId(id)).withSelfRel(),
+                    linkTo(methodOn(UsuarioController.class)
+                            .listarUsuarios()).withRel("usuarios"),
+                    linkTo(methodOn(UsuarioController.class)
+                            .actualizarUsuario(id, usuario.get())).withRel("actualizar"),
+                    linkTo(methodOn(UsuarioController.class)
+                            .eliminarUsuario(id)).withRel("eliminar")
+            );
+
+            return ResponseEntity.ok(resource);
+        }
+
+        return ResponseEntity.notFound().build();
     }
 
     @Operation(
@@ -67,8 +104,20 @@ public class UsuarioController {
             @ApiResponse(responseCode = "403", description = "Acceso denegado")
     })
     @PostMapping
-    public Usuario guardarUsuario(@RequestBody Usuario usuario) {
-        return usuarioService.save(usuario);
+    public ResponseEntity<EntityModel<Usuario>> guardarUsuario(@RequestBody Usuario usuario) {
+
+        Usuario nuevoUsuario = usuarioService.save(usuario);
+
+        EntityModel<Usuario> resource = EntityModel.of(nuevoUsuario,
+                linkTo(methodOn(UsuarioController.class)
+                        .obtenerUsuarioPorId(nuevoUsuario.getId())).withSelfRel(),
+                linkTo(methodOn(UsuarioController.class)
+                        .listarUsuarios()).withRel("usuarios"));
+
+        return ResponseEntity.created(
+                        linkTo(methodOn(UsuarioController.class)
+                                .obtenerUsuarioPorId(nuevoUsuario.getId())).toUri())
+                .body(resource);
     }
 
     @Operation(
@@ -82,12 +131,26 @@ public class UsuarioController {
             @ApiResponse(responseCode = "404", description = "Usuario no encontrado")
     })
     @PutMapping("/{id}")
-    public ResponseEntity<Usuario> actualizarUsuario(@PathVariable Long id, @RequestBody Usuario usuario) {
+    public ResponseEntity<EntityModel<Usuario>> actualizarUsuario(
+            @PathVariable Long id,
+            @RequestBody Usuario usuario) {
+
         Optional<Usuario> usuarioExistente = usuarioService.findById(id);
+
         if (usuarioExistente.isPresent()) {
+
             usuario.setId(id);
-            return ResponseEntity.ok(usuarioService.save(usuario));
+            Usuario actualizado = usuarioService.save(usuario);
+
+            EntityModel<Usuario> resource = EntityModel.of(actualizado,
+                    linkTo(methodOn(UsuarioController.class)
+                            .obtenerUsuarioPorId(id)).withSelfRel(),
+                    linkTo(methodOn(UsuarioController.class)
+                            .listarUsuarios()).withRel("usuarios"));
+
+            return ResponseEntity.ok(resource);
         }
+
         return ResponseEntity.notFound().build();
     }
 

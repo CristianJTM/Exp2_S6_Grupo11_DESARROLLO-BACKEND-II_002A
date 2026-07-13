@@ -10,6 +10,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
+
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 import java.util.List;
 
@@ -35,8 +40,30 @@ public class VentaController {
             @ApiResponse(responseCode = "403", description = "Acceso denegado")
     })
     @GetMapping
-    public List<Venta> listarVentas() {
-        return ventaService.findAll();
+    public CollectionModel<EntityModel<Venta>> listarVentas() {
+
+        List<EntityModel<Venta>> ventas =
+                ventaService.findAll()
+                        .stream()
+                        .map(venta -> EntityModel.of(
+                                venta,
+
+                                linkTo(methodOn(VentaController.class)
+                                        .obtenerVentaPorId(venta.getId()))
+                                        .withSelfRel(),
+
+                                linkTo(methodOn(VentaController.class)
+                                        .listarVentas())
+                                        .withRel("ventas")
+                        ))
+                        .toList();
+
+        return CollectionModel.of(
+                ventas,
+                linkTo(methodOn(VentaController.class)
+                        .listarVentas())
+                        .withSelfRel()
+        );
     }
 
     @Operation(
@@ -49,9 +76,29 @@ public class VentaController {
             @ApiResponse(responseCode = "403", description = "Acceso denegado")
     })
     @GetMapping("/{id}")
-    public ResponseEntity<Venta> obtenerVentaPorId(@PathVariable Long id) {
+    public ResponseEntity<EntityModel<Venta>> obtenerVentaPorId(
+            @PathVariable Long id) {
+
         Venta venta = ventaService.findById(id);
-        return (venta != null) ? ResponseEntity.ok(venta) : ResponseEntity.notFound().build();
+
+        if (venta == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        EntityModel<Venta> model =
+                EntityModel.of(venta);
+
+        model.add(
+                linkTo(methodOn(VentaController.class)
+                        .obtenerVentaPorId(id))
+                        .withSelfRel());
+
+        model.add(
+                linkTo(methodOn(VentaController.class)
+                        .listarVentas())
+                        .withRel("ventas"));
+
+        return ResponseEntity.ok(model);
     }
 
     @Operation(
@@ -64,7 +111,27 @@ public class VentaController {
             @ApiResponse(responseCode = "403", description = "Acceso denegado")
     })
     @PostMapping
-    public Venta guardarVenta(@RequestBody Venta venta) {
-        return ventaService.save(venta);
+    public ResponseEntity<EntityModel<Venta>> guardarVenta(
+            @RequestBody Venta venta) {
+
+        Venta nuevaVenta =
+                ventaService.save(venta);
+
+        EntityModel<Venta> model =
+                EntityModel.of(nuevaVenta);
+
+        model.add(
+                linkTo(methodOn(VentaController.class)
+                        .obtenerVentaPorId(nuevaVenta.getId()))
+                        .withSelfRel());
+
+        model.add(
+                linkTo(methodOn(VentaController.class)
+                        .listarVentas())
+                        .withRel("ventas"));
+
+        return ResponseEntity
+                .status(201)
+                .body(model);
     }
 }

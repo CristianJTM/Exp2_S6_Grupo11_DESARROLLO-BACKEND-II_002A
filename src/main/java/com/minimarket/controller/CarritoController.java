@@ -11,6 +11,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
+
+import java.util.stream.Collectors;
+
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
+
 import java.util.List;
 
 @Tag(
@@ -35,8 +43,23 @@ public class CarritoController {
             @ApiResponse(responseCode = "403", description = "Acceso denegado")
     })
     @GetMapping
-    public List<Carrito> listarCarrito() {
-        return carritoService.findAll();
+    public CollectionModel<EntityModel<Carrito>> listarCarrito() {
+
+        List<EntityModel<Carrito>> carrito = carritoService.findAll()
+                .stream()
+                .map(item -> EntityModel.of(item,
+                        linkTo(methodOn(CarritoController.class)
+                                .obtenerCarritoPorId(item.getId())).withSelfRel(),
+                        linkTo(methodOn(CarritoController.class)
+                                .listarCarrito()).withRel("carrito")
+                ))
+                .collect(Collectors.toList());
+
+        return CollectionModel.of(
+                carrito,
+                linkTo(methodOn(CarritoController.class)
+                        .listarCarrito()).withSelfRel()
+        );
     }
 
     @Operation(
@@ -49,9 +72,28 @@ public class CarritoController {
             @ApiResponse(responseCode = "403", description = "Acceso denegado")
     })
     @GetMapping("/{id}")
-    public ResponseEntity<Carrito> obtenerCarritoPorId(@PathVariable Long id) {
+    public ResponseEntity<EntityModel<Carrito>> obtenerCarritoPorId(@PathVariable Long id) {
+
         Carrito carrito = carritoService.findById(id);
-        return (carrito != null) ? ResponseEntity.ok(carrito) : ResponseEntity.notFound().build();
+
+        if (carrito != null) {
+
+            EntityModel<Carrito> resource = EntityModel.of(
+                    carrito,
+                    linkTo(methodOn(CarritoController.class)
+                            .obtenerCarritoPorId(id)).withSelfRel(),
+                    linkTo(methodOn(CarritoController.class)
+                            .listarCarrito()).withRel("carrito"),
+                    linkTo(methodOn(CarritoController.class)
+                            .actualizarCarrito(id, carrito)).withRel("actualizar"),
+                    linkTo(methodOn(CarritoController.class)
+                            .eliminarProductoDelCarrito(id)).withRel("eliminar")
+            );
+
+            return ResponseEntity.ok(resource);
+        }
+
+        return ResponseEntity.notFound().build();
     }
 
     @Operation(
@@ -64,8 +106,22 @@ public class CarritoController {
             @ApiResponse(responseCode = "403", description = "Acceso denegado")
     })
     @PostMapping
-    public Carrito agregarProductoAlCarrito(@RequestBody Carrito carrito) {
-        return carritoService.save(carrito);
+    public ResponseEntity<EntityModel<Carrito>> agregarProductoAlCarrito(@RequestBody Carrito carrito) {
+
+        Carrito nuevoCarrito = carritoService.save(carrito);
+
+        EntityModel<Carrito> resource = EntityModel.of(
+                nuevoCarrito,
+                linkTo(methodOn(CarritoController.class)
+                        .obtenerCarritoPorId(nuevoCarrito.getId())).withSelfRel(),
+                linkTo(methodOn(CarritoController.class)
+                        .listarCarrito()).withRel("carrito")
+        );
+
+        return ResponseEntity.created(
+                linkTo(methodOn(CarritoController.class)
+                        .obtenerCarritoPorId(nuevoCarrito.getId())).toUri()
+        ).body(resource);
     }
 
     @Operation(
@@ -79,12 +135,28 @@ public class CarritoController {
             @ApiResponse(responseCode = "404", description = "Carrito no encontrado")
     })
     @PutMapping("/{id}")
-    public ResponseEntity<Carrito> actualizarCarrito(@PathVariable Long id, @RequestBody Carrito carrito) {
+    public ResponseEntity<EntityModel<Carrito>> actualizarCarrito(
+            @PathVariable Long id,
+            @RequestBody Carrito carrito) {
+
         Carrito existente = carritoService.findById(id);
+
         if (existente != null) {
+
             carrito.setId(id);
-            return ResponseEntity.ok(carritoService.save(carrito));
+            Carrito actualizado = carritoService.save(carrito);
+
+            EntityModel<Carrito> resource = EntityModel.of(
+                    actualizado,
+                    linkTo(methodOn(CarritoController.class)
+                            .obtenerCarritoPorId(id)).withSelfRel(),
+                    linkTo(methodOn(CarritoController.class)
+                            .listarCarrito()).withRel("carrito")
+            );
+
+            return ResponseEntity.ok(resource);
         }
+
         return ResponseEntity.notFound().build();
     }
 

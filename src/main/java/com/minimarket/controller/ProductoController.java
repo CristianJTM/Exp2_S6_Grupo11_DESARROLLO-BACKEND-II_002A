@@ -7,6 +7,10 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -36,8 +40,34 @@ public class ProductoController {
             @ApiResponse(responseCode = "403", description = "Acceso denegado")
     })
     @GetMapping
-    public List<Producto> listarProductos() {
-        return productoService.findAll();
+    public CollectionModel<EntityModel<Producto>> listarProductos() {
+
+        List<EntityModel<Producto>> productos =
+                productoService.findAll()
+                        .stream()
+                        .map(producto -> EntityModel.of(
+                                producto,
+
+                                linkTo(methodOn(ProductoController.class)
+                                        .obtenerProductoPorId(producto.getId()))
+                                        .withSelfRel(),
+
+                                linkTo(methodOn(ProductoController.class)
+                                        .listarProductos())
+                                        .withRel("productos"),
+
+                                linkTo(methodOn(CategoriaController.class)
+                                        .obtenerCategoriaPorId(producto.getCategoria().getId()))
+                                        .withRel("categoria")
+                        ))
+                        .toList();
+
+        return CollectionModel.of(
+                productos,
+                linkTo(methodOn(ProductoController.class)
+                        .listarProductos())
+                        .withSelfRel()
+        );
     }
 
     @Operation(
@@ -50,9 +80,47 @@ public class ProductoController {
             @ApiResponse(responseCode = "403", description = "Acceso denegado")
     })
     @GetMapping("/{id}")
-    public ResponseEntity<Producto> obtenerProductoPorId(@PathVariable Long id) {
+    public ResponseEntity<EntityModel<Producto>> obtenerProductoPorId(
+            @PathVariable Long id) {
+
         Producto producto = productoService.findById(id);
-        return (producto != null) ? ResponseEntity.ok(producto) : ResponseEntity.notFound().build();
+
+        if (producto == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        EntityModel<Producto> model =
+                EntityModel.of(producto);
+
+        model.add(
+                linkTo(methodOn(ProductoController.class)
+                        .obtenerProductoPorId(id))
+                        .withSelfRel());
+
+        model.add(
+                linkTo(methodOn(ProductoController.class)
+                        .listarProductos())
+                        .withRel("productos"));
+
+        model.add(
+                linkTo(methodOn(ProductoController.class)
+                        .actualizarProducto(id, producto))
+                        .withRel("actualizar")
+        );
+
+        model.add(
+                linkTo(methodOn(ProductoController.class)
+                        .eliminarProducto(id))
+                        .withRel("eliminar")
+        );
+
+        model.add(
+                linkTo(methodOn(CategoriaController.class)
+                        .obtenerCategoriaPorId(producto.getCategoria().getId()))
+                        .withRel("categoria")
+        );
+
+        return ResponseEntity.ok(model);
     }
 
     @PostMapping
@@ -65,8 +133,28 @@ public class ProductoController {
             @ApiResponse(responseCode = "401", description = "No autorizado"),
             @ApiResponse(responseCode = "403", description = "Acceso denegado")
     })
-    public Producto guardarProducto(@RequestBody Producto producto) {
-        return productoService.save(producto);
+    public ResponseEntity<EntityModel<Producto>> guardarProducto(
+            @RequestBody Producto producto) {
+
+        Producto nuevo =
+                productoService.save(producto);
+
+        EntityModel<Producto> model =
+                EntityModel.of(nuevo);
+
+        model.add(
+                linkTo(methodOn(ProductoController.class)
+                        .obtenerProductoPorId(nuevo.getId()))
+                        .withSelfRel());
+
+        model.add(
+                linkTo(methodOn(ProductoController.class)
+                        .listarProductos())
+                        .withRel("productos"));
+
+        return ResponseEntity
+                .status(201)
+                .body(model);
     }
 
     @PutMapping("/{id}")
