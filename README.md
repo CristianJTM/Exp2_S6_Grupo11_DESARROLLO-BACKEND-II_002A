@@ -79,6 +79,33 @@ http://localhost:8080/v3/api-docs
 
 Este archivo puede importarse directamente en Postman para validar la consistencia de los endpoints.
 
+## Implementación de HATEOAS
+
+La API utiliza Spring HATEOAS para agregar enlaces dinámicos a las respuestas JSON.
+
+Se implementaron EntityModel y CollectionModel para mejorar la navegabilidad entre recursos relacionados.
+
+Ejemplo de respuesta:
+
+```json
+{
+  "id": 1,
+  "nombre": "Leche Entera",
+  "precio": 1500,
+  "_links": {
+    "self": {
+      "href": "http://localhost:8080/api/productos/1"
+    },
+    "productos": {
+      "href": "http://localhost:8080/api/productos"
+    },
+    "categoria": {
+      "href": "http://localhost:8080/api/categorias/1"
+    }
+  }
+}
+```
+
 ## Seguridad
 
 La aplicación utiliza autenticación basada en JSON Web Token (JWT) para proteger los recursos de la API.
