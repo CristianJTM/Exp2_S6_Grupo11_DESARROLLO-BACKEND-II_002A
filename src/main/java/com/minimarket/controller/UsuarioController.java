@@ -1,5 +1,6 @@
 package com.minimarket.controller;
 
+import com.minimarket.assembler.UsuarioModelAssembler;
 import com.minimarket.entity.Usuario;
 import com.minimarket.service.UsuarioService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -33,6 +34,9 @@ public class UsuarioController {
     @Autowired
     private UsuarioService usuarioService;
 
+    @Autowired
+    private UsuarioModelAssembler assembler;
+
     @Operation(
             summary = "Obtener todos los usuarios",
             description = "Devuelve la lista completa de usuarios"
@@ -45,19 +49,18 @@ public class UsuarioController {
     @GetMapping
     public CollectionModel<EntityModel<Usuario>> listarUsuarios() {
 
-        List<EntityModel<Usuario>> usuarios = usuarioService.findAll()
-                .stream()
-                .map(usuario -> EntityModel.of(usuario,
-                        linkTo(methodOn(UsuarioController.class)
-                                .obtenerUsuarioPorId(usuario.getId())).withSelfRel(),
-                        linkTo(methodOn(UsuarioController.class)
-                                .listarUsuarios()).withRel("usuarios")
-                ))
-                .collect(Collectors.toList());
+        List<EntityModel<Usuario>> usuarios =
+                usuarioService.findAll()
+                        .stream()
+                        .map(assembler::toModel)
+                        .toList();
 
-        return CollectionModel.of(usuarios,
+        return CollectionModel.of(
+                usuarios,
                 linkTo(methodOn(UsuarioController.class)
-                        .listarUsuarios()).withSelfRel());
+                        .listarUsuarios())
+                        .withSelfRel()
+        );
     }
 
     @Operation(
@@ -75,23 +78,10 @@ public class UsuarioController {
 
         Optional<Usuario> usuario = usuarioService.findById(id);
 
-        if (usuario.isPresent()) {
-
-            EntityModel<Usuario> resource = EntityModel.of(usuario.get(),
-                    linkTo(methodOn(UsuarioController.class)
-                            .obtenerUsuarioPorId(id)).withSelfRel(),
-                    linkTo(methodOn(UsuarioController.class)
-                            .listarUsuarios()).withRel("usuarios"),
-                    linkTo(methodOn(UsuarioController.class)
-                            .actualizarUsuario(id, usuario.get())).withRel("actualizar"),
-                    linkTo(methodOn(UsuarioController.class)
-                            .eliminarUsuario(id)).withRel("eliminar")
-            );
-
-            return ResponseEntity.ok(resource);
-        }
-
-        return ResponseEntity.notFound().build();
+        return usuario
+                .map(assembler::toModel)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @Operation(
@@ -104,20 +94,16 @@ public class UsuarioController {
             @ApiResponse(responseCode = "403", description = "Acceso denegado")
     })
     @PostMapping
-    public ResponseEntity<EntityModel<Usuario>> guardarUsuario(@RequestBody Usuario usuario) {
+    public ResponseEntity<EntityModel<Usuario>> guardarUsuario(
+            @RequestBody Usuario usuario) {
 
         Usuario nuevoUsuario = usuarioService.save(usuario);
 
-        EntityModel<Usuario> resource = EntityModel.of(nuevoUsuario,
-                linkTo(methodOn(UsuarioController.class)
-                        .obtenerUsuarioPorId(nuevoUsuario.getId())).withSelfRel(),
-                linkTo(methodOn(UsuarioController.class)
-                        .listarUsuarios()).withRel("usuarios"));
-
         return ResponseEntity.created(
                         linkTo(methodOn(UsuarioController.class)
-                                .obtenerUsuarioPorId(nuevoUsuario.getId())).toUri())
-                .body(resource);
+                                .obtenerUsuarioPorId(nuevoUsuario.getId()))
+                                .toUri())
+                .body(assembler.toModel(nuevoUsuario));
     }
 
     @Operation(
@@ -137,21 +123,17 @@ public class UsuarioController {
 
         Optional<Usuario> usuarioExistente = usuarioService.findById(id);
 
-        if (usuarioExistente.isPresent()) {
-
-            usuario.setId(id);
-            Usuario actualizado = usuarioService.save(usuario);
-
-            EntityModel<Usuario> resource = EntityModel.of(actualizado,
-                    linkTo(methodOn(UsuarioController.class)
-                            .obtenerUsuarioPorId(id)).withSelfRel(),
-                    linkTo(methodOn(UsuarioController.class)
-                            .listarUsuarios()).withRel("usuarios"));
-
-            return ResponseEntity.ok(resource);
+        if (usuarioExistente.isEmpty()) {
+            return ResponseEntity.notFound().build();
         }
 
-        return ResponseEntity.notFound().build();
+        usuario.setId(id);
+
+        Usuario actualizado = usuarioService.save(usuario);
+
+        return ResponseEntity.ok(
+                assembler.toModel(actualizado)
+        );
     }
 
     @Operation(

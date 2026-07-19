@@ -1,5 +1,6 @@
 package com.minimarket.controller;
 
+import com.minimarket.assembler.InventarioModelAssembler;
 import com.minimarket.entity.Inventario;
 import com.minimarket.service.InventarioService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -32,6 +33,9 @@ public class InventarioController {
     @Autowired
     private InventarioService inventarioService;
 
+    @Autowired
+    private InventarioModelAssembler assembler;
+
     @Operation(
             summary = "Obtener todos los movimientos de inventario",
             description = "Devuelve la lista completa de movimientos de inventario"
@@ -46,18 +50,12 @@ public class InventarioController {
 
         List<EntityModel<Inventario>> movimientos = inventarioService.findAll()
                 .stream()
-                .map(inventario -> EntityModel.of(inventario,
-                        linkTo(methodOn(InventarioController.class)
-                                .obtenerMovimientoPorId(inventario.getId())).withSelfRel(),
-                        linkTo(methodOn(InventarioController.class)
-                                .listarMovimientosDeInventario()).withRel("inventario")
-                ))
-                .collect(Collectors.toList());
+                .map(assembler::toModel)
+                .toList();
 
         return CollectionModel.of(
                 movimientos,
-                linkTo(methodOn(InventarioController.class)
-                        .listarMovimientosDeInventario()).withSelfRel()
+                assembler.toCollectionModel(inventarioService.findAll()).getRequiredLink("self")
         );
     }
 
@@ -75,24 +73,13 @@ public class InventarioController {
 
         Inventario inventario = inventarioService.findById(id);
 
-        if (inventario != null) {
-
-            EntityModel<Inventario> resource = EntityModel.of(
-                    inventario,
-                    linkTo(methodOn(InventarioController.class)
-                            .obtenerMovimientoPorId(id)).withSelfRel(),
-                    linkTo(methodOn(InventarioController.class)
-                            .listarMovimientosDeInventario()).withRel("inventario"),
-                    linkTo(methodOn(InventarioController.class)
-                            .actualizarMovimiento(id, inventario)).withRel("actualizar"),
-                    linkTo(methodOn(InventarioController.class)
-                            .eliminarMovimiento(id)).withRel("eliminar")
-            );
-
-            return ResponseEntity.ok(resource);
+        if (inventario == null) {
+            return ResponseEntity.notFound().build();
         }
 
-        return ResponseEntity.notFound().build();
+        return ResponseEntity.ok(
+                assembler.toModel(inventario)
+        );
     }
 
     @Operation(
@@ -105,22 +92,18 @@ public class InventarioController {
             @ApiResponse(responseCode = "403", description = "Acceso denegado")
     })
     @PostMapping
-    public ResponseEntity<EntityModel<Inventario>> registrarMovimiento(@RequestBody Inventario inventario) {
+    public ResponseEntity<EntityModel<Inventario>> registrarMovimiento(
+            @RequestBody Inventario inventario) {
 
-        Inventario nuevoMovimiento = inventarioService.save(inventario);
-
-        EntityModel<Inventario> resource = EntityModel.of(
-                nuevoMovimiento,
-                linkTo(methodOn(InventarioController.class)
-                        .obtenerMovimientoPorId(nuevoMovimiento.getId())).withSelfRel(),
-                linkTo(methodOn(InventarioController.class)
-                        .listarMovimientosDeInventario()).withRel("inventario")
-        );
+        Inventario nuevo = inventarioService.save(inventario);
 
         return ResponseEntity.created(
                 linkTo(methodOn(InventarioController.class)
-                        .obtenerMovimientoPorId(nuevoMovimiento.getId())).toUri()
-        ).body(resource);
+                        .obtenerMovimientoPorId(nuevo.getId()))
+                        .toUri()
+        ).body(
+                assembler.toModel(nuevo)
+        );
     }
 
     @Operation(
@@ -140,23 +123,17 @@ public class InventarioController {
 
         Inventario existente = inventarioService.findById(id);
 
-        if (existente != null) {
-
-            inventario.setId(id);
-            Inventario actualizado = inventarioService.save(inventario);
-
-            EntityModel<Inventario> resource = EntityModel.of(
-                    actualizado,
-                    linkTo(methodOn(InventarioController.class)
-                            .obtenerMovimientoPorId(id)).withSelfRel(),
-                    linkTo(methodOn(InventarioController.class)
-                            .listarMovimientosDeInventario()).withRel("inventario")
-            );
-
-            return ResponseEntity.ok(resource);
+        if (existente == null) {
+            return ResponseEntity.notFound().build();
         }
 
-        return ResponseEntity.notFound().build();
+        inventario.setId(id);
+
+        Inventario actualizado = inventarioService.save(inventario);
+
+        return ResponseEntity.ok(
+                assembler.toModel(actualizado)
+        );
     }
 
     @Operation(

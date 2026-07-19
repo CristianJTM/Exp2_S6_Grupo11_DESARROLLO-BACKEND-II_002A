@@ -1,5 +1,6 @@
 package com.minimarket.controller;
 
+import com.minimarket.assembler.VentaModelAssembler;
 import com.minimarket.entity.Venta;
 import com.minimarket.service.VentaService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -30,6 +31,9 @@ public class VentaController {
     @Autowired
     private VentaService ventaService;
 
+    @Autowired
+    private VentaModelAssembler assembler;
+
     @Operation(
             summary = "Obtener todas las ventas",
             description = "Devuelve la lista completa de ventas"
@@ -45,17 +49,7 @@ public class VentaController {
         List<EntityModel<Venta>> ventas =
                 ventaService.findAll()
                         .stream()
-                        .map(venta -> EntityModel.of(
-                                venta,
-
-                                linkTo(methodOn(VentaController.class)
-                                        .obtenerVentaPorId(venta.getId()))
-                                        .withSelfRel(),
-
-                                linkTo(methodOn(VentaController.class)
-                                        .listarVentas())
-                                        .withRel("ventas")
-                        ))
+                        .map(assembler::toModel)
                         .toList();
 
         return CollectionModel.of(
@@ -85,20 +79,9 @@ public class VentaController {
             return ResponseEntity.notFound().build();
         }
 
-        EntityModel<Venta> model =
-                EntityModel.of(venta);
-
-        model.add(
-                linkTo(methodOn(VentaController.class)
-                        .obtenerVentaPorId(id))
-                        .withSelfRel());
-
-        model.add(
-                linkTo(methodOn(VentaController.class)
-                        .listarVentas())
-                        .withRel("ventas"));
-
-        return ResponseEntity.ok(model);
+        return ResponseEntity.ok(
+                assembler.toModel(venta)
+        );
     }
 
     @Operation(
@@ -114,24 +97,68 @@ public class VentaController {
     public ResponseEntity<EntityModel<Venta>> guardarVenta(
             @RequestBody Venta venta) {
 
-        Venta nuevaVenta =
-                ventaService.save(venta);
+        Venta nuevaVenta = ventaService.save(venta);
 
-        EntityModel<Venta> model =
-                EntityModel.of(nuevaVenta);
-
-        model.add(
+        return ResponseEntity.created(
                 linkTo(methodOn(VentaController.class)
                         .obtenerVentaPorId(nuevaVenta.getId()))
-                        .withSelfRel());
+                        .toUri()
+        ).body(
+                assembler.toModel(nuevaVenta)
+        );
+    }
 
-        model.add(
-                linkTo(methodOn(VentaController.class)
-                        .listarVentas())
-                        .withRel("ventas"));
+    @Operation(
+            summary = "Actualizar una venta",
+            description = "Modifica los datos de una venta específica"
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Venta actualizada correctamente"),
+            @ApiResponse(responseCode = "401", description = "No autorizado"),
+            @ApiResponse(responseCode = "403", description = "Acceso denegado"),
+            @ApiResponse(responseCode = "404", description = "Venta no encontrada")
+    })
+    @PutMapping("/{id}")
+    public ResponseEntity<EntityModel<Venta>> actualizarVenta(
+            @PathVariable Long id,
+            @RequestBody Venta venta) {
 
-        return ResponseEntity
-                .status(201)
-                .body(model);
+        Venta existente = ventaService.findById(id);
+
+        if (existente == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        venta.setId(id);
+
+        Venta actualizada = ventaService.save(venta);
+
+        return ResponseEntity.ok(
+                assembler.toModel(actualizada)
+        );
+    }
+
+    @Operation(
+            summary = "Eliminar venta",
+            description = "Elimina una venta específica"
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Venta eliminada correctamente"),
+            @ApiResponse(responseCode = "401", description = "No autorizado"),
+            @ApiResponse(responseCode = "403", description = "Acceso denegado"),
+            @ApiResponse(responseCode = "404", description = "Venta no encontrada")
+    })
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> eliminarVenta(@PathVariable Long id) {
+
+        Venta venta = ventaService.findById(id);
+
+        if (venta == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        ventaService.deleteById(id);
+
+        return ResponseEntity.noContent().build();
     }
 }

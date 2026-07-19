@@ -1,5 +1,6 @@
 package com.minimarket.controller;
 
+import com.minimarket.assembler.ProductoModelAssembler;
 import com.minimarket.entity.Producto;
 import com.minimarket.service.ProductoService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -29,6 +30,8 @@ public class ProductoController {
     @Autowired
     private ProductoService productoService;
 
+    @Autowired
+    private ProductoModelAssembler assembler;
 
     @Operation(
             summary = "Obtener todos los productos",
@@ -45,21 +48,7 @@ public class ProductoController {
         List<EntityModel<Producto>> productos =
                 productoService.findAll()
                         .stream()
-                        .map(producto -> EntityModel.of(
-                                producto,
-
-                                linkTo(methodOn(ProductoController.class)
-                                        .obtenerProductoPorId(producto.getId()))
-                                        .withSelfRel(),
-
-                                linkTo(methodOn(ProductoController.class)
-                                        .listarProductos())
-                                        .withRel("productos"),
-
-                                linkTo(methodOn(CategoriaController.class)
-                                        .obtenerCategoriaPorId(producto.getCategoria().getId()))
-                                        .withRel("categoria")
-                        ))
+                        .map(assembler::toModel)
                         .toList();
 
         return CollectionModel.of(
@@ -80,47 +69,17 @@ public class ProductoController {
             @ApiResponse(responseCode = "403", description = "Acceso denegado")
     })
     @GetMapping("/{id}")
-    public ResponseEntity<EntityModel<Producto>> obtenerProductoPorId(
-            @PathVariable Long id) {
+    public ResponseEntity<EntityModel<Producto>> obtenerProductoPorId(@PathVariable Long id){
 
         Producto producto = productoService.findById(id);
 
-        if (producto == null) {
+        if(producto==null){
             return ResponseEntity.notFound().build();
         }
 
-        EntityModel<Producto> model =
-                EntityModel.of(producto);
-
-        model.add(
-                linkTo(methodOn(ProductoController.class)
-                        .obtenerProductoPorId(id))
-                        .withSelfRel());
-
-        model.add(
-                linkTo(methodOn(ProductoController.class)
-                        .listarProductos())
-                        .withRel("productos"));
-
-        model.add(
-                linkTo(methodOn(ProductoController.class)
-                        .actualizarProducto(id, producto))
-                        .withRel("actualizar")
+        return ResponseEntity.ok(
+                assembler.toModel(producto)
         );
-
-        model.add(
-                linkTo(methodOn(ProductoController.class)
-                        .eliminarProducto(id))
-                        .withRel("eliminar")
-        );
-
-        model.add(
-                linkTo(methodOn(CategoriaController.class)
-                        .obtenerCategoriaPorId(producto.getCategoria().getId()))
-                        .withRel("categoria")
-        );
-
-        return ResponseEntity.ok(model);
     }
 
     @PostMapping
@@ -134,27 +93,19 @@ public class ProductoController {
             @ApiResponse(responseCode = "403", description = "Acceso denegado")
     })
     public ResponseEntity<EntityModel<Producto>> guardarProducto(
-            @RequestBody Producto producto) {
+            @RequestBody Producto producto){
 
-        Producto nuevo =
-                productoService.save(producto);
-
-        EntityModel<Producto> model =
-                EntityModel.of(nuevo);
-
-        model.add(
-                linkTo(methodOn(ProductoController.class)
-                        .obtenerProductoPorId(nuevo.getId()))
-                        .withSelfRel());
-
-        model.add(
-                linkTo(methodOn(ProductoController.class)
-                        .listarProductos())
-                        .withRel("productos"));
+        Producto nuevo = productoService.save(producto);
 
         return ResponseEntity
-                .status(201)
-                .body(model);
+                .created(
+                        linkTo(methodOn(ProductoController.class)
+                                .obtenerProductoPorId(nuevo.getId()))
+                                .toUri()
+                )
+                .body(
+                        assembler.toModel(nuevo)
+                );
     }
 
     @PutMapping("/{id}")
@@ -168,13 +119,24 @@ public class ProductoController {
             @ApiResponse(responseCode = "403", description = "Acceso denegado"),
             @ApiResponse(responseCode = "404", description = "Producto no encontrado")
     })
-    public ResponseEntity<Producto> actualizarProducto(@PathVariable Long id, @RequestBody Producto producto) {
-        Producto productoExistente = productoService.findById(id);
-        if (productoExistente != null) {
-            producto.setId(id);
-            return ResponseEntity.ok(productoService.save(producto));
+    public ResponseEntity<EntityModel<Producto>> actualizarProducto(
+            @PathVariable Long id,
+            @RequestBody Producto producto){
+
+        Producto existente = productoService.findById(id);
+
+        if(existente==null){
+            return ResponseEntity.notFound().build();
         }
-        return ResponseEntity.notFound().build();
+
+        producto.setId(id);
+
+        Producto actualizado =
+                productoService.save(producto);
+
+        return ResponseEntity.ok(
+                assembler.toModel(actualizado)
+        );
     }
 
     @Operation(

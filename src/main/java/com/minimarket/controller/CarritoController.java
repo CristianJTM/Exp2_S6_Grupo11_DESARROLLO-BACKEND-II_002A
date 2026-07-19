@@ -1,5 +1,6 @@
 package com.minimarket.controller;
 
+import com.minimarket.assembler.CarritoModelAssembler;
 import com.minimarket.entity.Carrito;
 import com.minimarket.service.CarritoService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -14,7 +15,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
 
-import java.util.stream.Collectors;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
@@ -33,6 +33,9 @@ public class CarritoController {
     @Autowired
     private CarritoService carritoService;
 
+    @Autowired
+    private CarritoModelAssembler assembler;
+
     @Operation(
             summary = "Obtener todos los productos del carrito",
             description = "Devuelve la lista completa de productos en el carrito"
@@ -45,20 +48,18 @@ public class CarritoController {
     @GetMapping
     public CollectionModel<EntityModel<Carrito>> listarCarrito() {
 
-        List<EntityModel<Carrito>> carrito = carritoService.findAll()
-                .stream()
-                .map(item -> EntityModel.of(item,
-                        linkTo(methodOn(CarritoController.class)
-                                .obtenerCarritoPorId(item.getId())).withSelfRel(),
-                        linkTo(methodOn(CarritoController.class)
-                                .listarCarrito()).withRel("carrito")
-                ))
-                .collect(Collectors.toList());
+        List<EntityModel<Carrito>> carrito =
+                carritoService.findAll()
+                        .stream()
+                        .map(assembler::toModel)
+                        .toList();
 
         return CollectionModel.of(
                 carrito,
+
                 linkTo(methodOn(CarritoController.class)
-                        .listarCarrito()).withSelfRel()
+                        .listarCarrito())
+                        .withSelfRel()
         );
     }
 
@@ -76,24 +77,13 @@ public class CarritoController {
 
         Carrito carrito = carritoService.findById(id);
 
-        if (carrito != null) {
-
-            EntityModel<Carrito> resource = EntityModel.of(
-                    carrito,
-                    linkTo(methodOn(CarritoController.class)
-                            .obtenerCarritoPorId(id)).withSelfRel(),
-                    linkTo(methodOn(CarritoController.class)
-                            .listarCarrito()).withRel("carrito"),
-                    linkTo(methodOn(CarritoController.class)
-                            .actualizarCarrito(id, carrito)).withRel("actualizar"),
-                    linkTo(methodOn(CarritoController.class)
-                            .eliminarProductoDelCarrito(id)).withRel("eliminar")
-            );
-
-            return ResponseEntity.ok(resource);
+        if(carrito==null){
+            return ResponseEntity.notFound().build();
         }
 
-        return ResponseEntity.notFound().build();
+        return ResponseEntity.ok(
+                assembler.toModel(carrito)
+        );
     }
 
     @Operation(
@@ -110,18 +100,13 @@ public class CarritoController {
 
         Carrito nuevoCarrito = carritoService.save(carrito);
 
-        EntityModel<Carrito> resource = EntityModel.of(
-                nuevoCarrito,
-                linkTo(methodOn(CarritoController.class)
-                        .obtenerCarritoPorId(nuevoCarrito.getId())).withSelfRel(),
-                linkTo(methodOn(CarritoController.class)
-                        .listarCarrito()).withRel("carrito")
-        );
-
         return ResponseEntity.created(
                 linkTo(methodOn(CarritoController.class)
-                        .obtenerCarritoPorId(nuevoCarrito.getId())).toUri()
-        ).body(resource);
+                        .obtenerCarritoPorId(nuevoCarrito.getId()))
+                        .toUri()
+        ).body(
+                assembler.toModel(nuevoCarrito)
+        );
     }
 
     @Operation(
@@ -143,18 +128,9 @@ public class CarritoController {
 
         if (existente != null) {
 
-            carrito.setId(id);
-            Carrito actualizado = carritoService.save(carrito);
-
-            EntityModel<Carrito> resource = EntityModel.of(
-                    actualizado,
-                    linkTo(methodOn(CarritoController.class)
-                            .obtenerCarritoPorId(id)).withSelfRel(),
-                    linkTo(methodOn(CarritoController.class)
-                            .listarCarrito()).withRel("carrito")
+            return ResponseEntity.ok(
+                    assembler.toModel(existente)
             );
-
-            return ResponseEntity.ok(resource);
         }
 
         return ResponseEntity.notFound().build();
