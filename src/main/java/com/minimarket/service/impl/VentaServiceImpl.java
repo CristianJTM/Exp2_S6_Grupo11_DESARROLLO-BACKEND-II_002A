@@ -51,4 +51,9 @@ public class VentaServiceImpl implements VentaService {
     public List<Venta> findByUsuarioId(Long usuarioId) {
         return ventaRepository.findByUsuarioId(usuarioId);
     }
+
+    @Override
+    public void deleteById(Long id) {
+        ventaRepository.deleteById(id);
+    }
 }
